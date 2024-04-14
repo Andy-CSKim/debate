@@ -1,6 +1,6 @@
-from typing import Union
+from typing import Union, Annotated
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from pydantic import BaseModel
 
 
@@ -10,6 +10,10 @@ class Item(BaseModel):
     price: float
     tax: float | None = None
 
+class User(BaseModel):
+    username: str
+    full_name: str | None = None
+
 app = FastAPI()
 
 
@@ -18,6 +22,9 @@ def read_root():
     print("read_root")
     return {"Hello": "nice to meet you"}
 
+@app.get("/header")
+async def read_items(user_agent: Annotated[str | None, Header()] = None):
+    return {"User-Agent": user_agent}
 
 @app.get("/items/{item_id}") # /items/5?q=hello
 def read_item(item_id: int, q: Union[str, None] = None): # ?q=hello
@@ -37,3 +44,8 @@ def convert(mile: float):
 async def create_item(item: Item):
     print("create_item", item)
     return item
+
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, item: Item, user: User):
+    results = {"item_id": item_id, "item": item, "user": user}
+    return results
