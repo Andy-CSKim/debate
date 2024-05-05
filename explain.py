@@ -59,3 +59,7 @@ async def create_item(item: Item):
 async def update_item(item_id: int, item: Item, user: User, q:str|None = None):
     results = {"item_id": item_id, "item": item, "user": user}
     return results
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=3001)
