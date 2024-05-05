@@ -45,6 +45,7 @@ def read_item(item_id: int, q: Union[str, None] = None): # ?q=hello
 # /convert?mile=100  --> {"km": 160.9344}    mile * 1.609344
 @app.get("/convert")
 def convert(mile: float):
+    print("convert", mile)
     km = mile * 1.609344
     return {"km": km}
 
