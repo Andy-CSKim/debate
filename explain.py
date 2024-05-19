@@ -63,7 +63,7 @@ async def update_item(item: Item, user: User, q:str|None = None):
 
 @app.put("/items/{item_id}")
 async def update_item(item_id: int, item: Item, user: User, q:str|None = None):
-    results = {"item_id": item_id, "item": item, "user": user}
+    results = {"item_id": item_id, "item": item, "user": user, "q": q}
     return results
 
 if __name__ == "__main__":
