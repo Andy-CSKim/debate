@@ -58,7 +58,7 @@ async def create_item(item: Item):
 
 @app.put("/items")
 async def update_item(item: Item, user: User, q:str|None = None):
-    results = {"item": item, "user": user}
+    results = {"item": item, "user": user, "q": q}
     return results
 
 @app.put("/items/{item_id}")
