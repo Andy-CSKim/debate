@@ -1,8 +1,14 @@
-from typing import Union, Annotated
+import json
+from typing import Union, Annotated, List
 
 from fastapi import FastAPI, Header
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+
+from sqlalchemy import create_engine, text
+# postgresql://postgres:12345678@localhost:5832/postgres
+engine = create_engine("postgresql+psycopg2://postgres:12345678@localhost:5832/postgres")
+
 
 class Item(BaseModel):
     name: str
@@ -13,6 +19,10 @@ class Item(BaseModel):
 class User(BaseModel):
     username: str
     full_name: str | None = None
+
+class Member(BaseModel):
+    name: str
+    role: str 
 
 app = FastAPI()
 
@@ -52,6 +62,7 @@ def convert(mile: float):
 # /dollar/{value}  --> {"won": 1200}    value * 1200
 
 @app.post("/items")
+# class Item = {name: str, description: str, price: float, tax: float}
 async def create_item(item: Item):
     print("create_item", item)
     return item
@@ -65,6 +76,70 @@ async def update_item(item: Item, user: User, q:str|None = None):
 async def update_item(item_id: int, item: Item, user: User, q:str|None = None):
     results = {"item_id": item_id, "item": item, "user": user, "q": q}
     return results
+
+
+# sample code for explanation
+def test():
+    fin = open("data.json", "rt", encoding="utf-8")
+    data = fin.readline()
+    print(data)
+    fin.close()
+
+    with open("data.json", "rt", encoding="utf-8") as fin:
+        data = fin.readline()
+        print(data)
+
+
+### DB CRUD
+# read
+@app.get("/members")
+def read_members():
+    # conn = engine.connect()  # database connection like open
+    # result = conn.execute(text("SELECT * FROM member"))
+
+    with engine.connect() as conn:
+      result = conn.execute(text("SELECT * FROM member"))
+
+    if (result is None):
+        return "No data"
+    
+    response = result.all()
+    print("=== response ===", type(response), type(response[0]))
+    # === response === <class 'list'> <class 'sqlalchemy.engine.row.Row'>
+    print(response)
+    # [(2, 'Kim', 'designer'), (3, 'Choi', 'programmer'), (4, 'Andy', 'coder'), (5, 'William', 'manager'), (1, 'Lee', 'coder'), (16, 'Lee', 'william'), (18, 'Brian', 'designer'), (22, 'Tommy', 'designer'), (23, 'Joy', 'designer'), (24, 'Joy', 'designer')]
+    # return response
+    tmp = []
+    for row in response:  # row = (2, 'Kim', 'designer'), <class 'sqlalchemy.engine.row.Row'>
+        tmp.append(list(row)) # <class 'sqlalchemy.engine.row.Row'> --> list
+
+    # conn.close()
+    print("=== tmp ===")
+    print(tmp)
+    # [[2, 'Kim', 'designer'], [3, 'Choi', 'programmer'], [4, 'Andy', 'coder'], [5, 'William', 'manager'], [1, 'Lee', 'coder'], [16, 'Lee', 'william'], [18, 'Brian', 'designer'], [22, 'Tommy', 'designer'], [23, 'Joy', 'designer'], [24, 'Joy', 'designer']] 
+    return tmp  # list[list] --> json --> frontend
+
+    # return [list(row) for row in response]
+
+# create
+# Member(name="Tommy", role="designer")
+@app.post("/member")
+def create_member(member: Member): # json --> class Member
+    # insert into member ("name", "role") values ('Tommy', 'designer');
+    print(member.name, member.role) # class
+
+    tmp = member.dict()  # {"name": "Tommy", "role": "designer"}
+    print(tmp)  # tmp['name'], tmp['role'] # dict
+
+    # name = member.name
+    # role = member.role
+
+    with engine.connect() as conn:
+        # member : NG, tmp: OK, member.name, member.role : NG
+        conn.execute(text('INSERT INTO member (name, role) VALUES (:name, :role)'),  member.dict()) # tmp
+        conn.commit()
+    return member
+
 
 if __name__ == "__main__":
     import uvicorn
